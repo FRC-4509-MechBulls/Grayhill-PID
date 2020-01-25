@@ -13,9 +13,11 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -35,7 +37,7 @@ public class Robot extends TimedRobot {
 
   // I only have one joystick. here it is:
   Joystick joystick = new Joystick(0);
-
+ 
   // I also only have one Talon connected:
   TalonSRX _motor = new TalonSRX(2);
 
@@ -45,7 +47,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    _motor.setSelectedSensorPosition(0);
+    //_motor.setSelectedSensorPosition(0);
     _motor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder, 0, 10);
 
     /*************************************************************************
@@ -145,8 +147,10 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     SmartDashboard.putNumber("Current Pos:", _motor.getSelectedSensorPosition(0));
+   
     // Output Encoder Values, joystick values, and velocity in encoder pulses per
     // 100msec
+    Constants.button.whenPressed(new ResetEncoderCommand());
     double velocity = _motor.getSelectedSensorVelocity(0);
     // and put it up on the dashboard
 
