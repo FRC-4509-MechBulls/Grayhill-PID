@@ -11,9 +11,14 @@ public class Constants {
     public static final JoystickButton button = new JoystickButton(controller, XboxController.Button.kA.value);
     public static TalonSRX _motor = new TalonSRX(2);
 
-    double ticksPerRotation = 256;
-    double wheelDiameter = 6; //inches
-    public double ticksPerInch = (ticksPerRotation)/(wheelDiameter*Math.PI);
-    public double ticksPerFoot = ticksPerInch*12;
+    static double ticksPerRotation = 256;
+    static double wheelDiameter = 4; //inches
+    static double targetPosition = 15; //in feet
+    public static double ticksPerInch = (ticksPerRotation)/(wheelDiameter*Math.PI);
+    public static double ticksPerFoot = ticksPerInch*12;
+
+    // TEST STUFF
+
+    public static double target = 4096*10;
 
 }
