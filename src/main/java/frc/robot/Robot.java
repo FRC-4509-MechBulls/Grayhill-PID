@@ -38,6 +38,12 @@ public class Robot extends TimedRobot {
   private static final double Kd = 200;
   private static final int IZone = 150; // IZone, this is explained below
 
+  // private static final double Kp = 2.0; 
+  // private static final double Ki = 0.02;  from the documentation, the zalues for K were all 0 and IZone was 150
+  // private static final double Kf = 0.0; 
+  // private static final double Kd = 200;
+  // private static final int IZone = 150; 
+
   // I only have one joystick. here it is:
   Joystick joystick = new Joystick(0);
  
