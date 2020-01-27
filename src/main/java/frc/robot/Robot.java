@@ -158,12 +158,12 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
+    SmartDashboard.putNumber("encoder value", _motor.getSelectedSensorPosition(0) * kDriveTick2Feet);
 
-    if (joystick.getRawButton(1)) {
-      setpoint = 10;
-    } else if (joystick.getRawButton(2)) {
-      setpoint = 0;
-    }
+   
+      setpoint = 50; //degree to set encoder to
+    
+    
 
     // get sensor position
     double sensorPosition = _motor.getSelectedSensorPosition(0) * kDriveTick2Feet;
