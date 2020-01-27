@@ -16,6 +16,7 @@ import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,23 +33,35 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
-  private static final double Kp = 2.0; // <- when i say change Kp, it’s this!
-  private static final double Ki = 0.02;
-  private static final double Kf = 0.0; // no feed-forward on position control
-  private static final double Kd = 200;
-  private static final int IZone = 150; // IZone, this is explained below
-
-  // private static final double Kp = 2.0; 
-  // private static final double Ki = 0.02;  from the documentation, the zalues for K were all 0 and IZone was 150
-  // private static final double Kf = 0.0; 
+  // private static final double Kp = 2.0; // <- when i say change Kp, it’s this!
+  // private static final double Ki = 0.02;
+  // private static final double Kf = 0.0; // no feed-forward on position control
   // private static final double Kd = 200;
-  // private static final int IZone = 150; 
+  // private static final int IZone = 150; // IZone, this is explained below
 
+  // // private static final double Kp = 2.0;
+  // // private static final double Ki = 0.02; from the documentation, the zalues
+  // for K were all 0 and IZone was 150
+  // // private static final double Kf = 0.0;
+  // // private static final double Kd = 200;
+  // // private static final int IZone = 150;
+
+  // FRC0toAutonomous constants:
+  final double kP = 0.5;
+  final double kI = 0.5;
+  final double kD = 0.1;
+  final double iLimit = 1;
+
+  double setpoint = 0;
+  double errorSum = 0;
+  double lastTimestamp = 0;
+  double lastError = 0;
   // I only have one joystick. here it is:
   Joystick joystick = new Joystick(0);
- 
+
   // I also only have one Talon connected:
   WPI_TalonSRX _motor = new WPI_TalonSRX(2);
+  private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -56,7 +69,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
-    //_motor.setSelectedSensorPosition(0);
+  
+
+    // _motor.setSelectedSensorPosition(0);
     _motor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
 
     /*************************************************************************
@@ -75,10 +90,11 @@ public class Robot extends TimedRobot {
     _motor.setSensorPhase(true);
     _motor.setInverted(true);
 
-    _motor.config_kF(0, Kf, 0); // No feed-forward on position control
-    _motor.config_kP(0, Kp, 0); // P factor!
-    _motor.config_kI(0, Ki, 0);
-    _motor.config_kD(0, Kd, 0); // note- these are defined above so they're easy to find and change.
+    // _motor.config_kF(0, Kf, 0); // No feed-forward on position control
+    // _motor.config_kP(0, Kp, 0); // P factor!
+    // _motor.config_kI(0, Ki, 0);
+    // _motor.config_kD(0, Kd, 0); // note- these are defined above so they're easy
+    // to find and change.
 
     // Instantiate our RobotContainer. This will perform all our button bindings,
     // and put our
@@ -96,6 +112,8 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
+    SmartDashboard.putNumber("encoder value", _motor.getSelectedSensorPosition(0) * kDriveTick2Feet);
+
     // Runs the Scheduler. This is responsible for polling buttons, adding
     // newly-scheduled
     // commands, running already-scheduled commands, removing finished or
@@ -123,8 +141,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
+    errorSum = 0;
+    lastError = 0;
+    lastTimestamp = Timer.getFPGATimestamp();
     // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-    _motor.setSelectedSensorPosition( 0,0,1000);
+    _motor.setSelectedSensorPosition(0, 0, 1000);
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
@@ -137,33 +158,36 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousPeriodic() {
+    SmartDashboard.putNumber("encoder value", _motor.getSelectedSensorPosition(0) * kDriveTick2Feet);
 
-    // while(_motor.getSelectedSensorPosition(0) > -256){
-    //   SmartDashboard.putNumber("Current Pos:", _motor.getSelectedSensorPosition(0));
+   
+      setpoint = 50; //degree to set encoder to
+    
+    
 
-    //   _motor.set(.5);
-    // }
-    // _motor.set(0);
+    // get sensor position
+    double sensorPosition = _motor.getSelectedSensorPosition(0) * kDriveTick2Feet;
 
+    // calculations
+    double error = setpoint - sensorPosition;
+    double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-    // JEREMHY TEST PID STUFF FOR AUTONOMOUS
+    if (Math.abs(error) < iLimit) {
+      errorSum += error * dt;
 
+    }
+    double errorRate = (error - lastError) / dt;
 
-    double velocity = _motor.getSelectedSensorVelocity(0);
-    //and put it up on the dashboard
-    SmartDashboard.putNumber("Motor Encoder Position", _motor.getSelectedSensorPosition(0));
-    SmartDashboard.putNumber("Motor Encoder Velocity", velocity);
+    double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
 
-    // if (_motor.getSelectedSensorPosition(0) > -50){
-      _motor.set(ControlMode.Position, Constants.target);
-    // } 
+    // output to motors
+    _motor.set(outputSpeed);
 
-    // if (_motor.getSelectedSensorPosition(0) < 50){
-      // _motor.set(ControlMode.Position, -Constants.target);
-    // } 
-
+    // update last- variables
+    lastTimestamp = Timer.getFPGATimestamp();
+    lastError = error;
   }
- 
+
   @Override
   public void teleopInit() {
     // This makes sure that the autonomous stops running when
@@ -182,14 +206,14 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     SmartDashboard.putNumber("Current Pos:", _motor.getSelectedSensorPosition(0));
-    
+
     // Output Encoder Values, joystick values, and velocity in encoder pulses per
     // 100msec
     Constants.button.whenPressed(new ResetEncoderCommand());
     double velocity = _motor.getSelectedSensorVelocity(0);
     // and put it up on the dashboard
     // if(_motor.getSelectedSensorPosition(0) > 256){
-    //   _motor.set(ControlMode.PercentOutput, 0);
+    // _motor.set(ControlMode.PercentOutput, 0);
 
     // }
     SmartDashboard.putNumber("Motor Encoder Velocity", velocity);
@@ -203,7 +227,6 @@ public class Robot extends TimedRobot {
       if (Math.abs(axis) > 0.1) {
         _motor.set(ControlMode.PercentOutput, axis);
       }
- 
 
     }
   }
