@@ -62,6 +62,7 @@ public class Robot extends TimedRobot {
   // I also only have one Talon connected:
   WPI_TalonSRX _motor = new WPI_TalonSRX(2);
   private final double kDriveTick2Feet = 1.0 / 128 * 6 * Math.PI / 12;
+  private final double kArmTick2Deg = 360.0 / 512 * 26 / 42 * 18 / 60 * 18 / 84;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -70,7 +71,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
   
-
+    _motor.setSelectedSensorPosition(0, 0, 10);
     // _motor.setSelectedSensorPosition(0);
     _motor.configSelectedFeedbackSensor(FeedbackDevice.QuadEncoder);
 
@@ -89,7 +90,11 @@ public class Robot extends TimedRobot {
     _motor.configPeakOutputReverse(-1, 0);
     _motor.setSensorPhase(true);
     _motor.setInverted(true);
+    _motor.configReverseSoftLimitThreshold((int) (0 / kArmTick2Deg), 10);
+    _motor.configForwardSoftLimitThreshold((int) (175 / kArmTick2Deg), 10);
 
+    _motor.configReverseSoftLimitEnable(true, 10);
+    _motor.configForwardSoftLimitEnable(true, 10);
     // _motor.config_kF(0, Kf, 0); // No feed-forward on position control
     // _motor.config_kP(0, Kp, 0); // P factor!
     // _motor.config_kI(0, Ki, 0);
@@ -141,11 +146,11 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
-    errorSum = 0;
-    lastError = 0;
-    lastTimestamp = Timer.getFPGATimestamp();
+    // errorSum = 0;
+    // lastError = 0;
+    // lastTimestamp = Timer.getFPGATimestamp();
     // m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-    _motor.setSelectedSensorPosition(0, 0, 1000);
+    _motor.setSelectedSensorPosition(0, 0, 10);
 
     // schedule the autonomous command (example)
     if (m_autonomousCommand != null) {
@@ -159,33 +164,33 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
 
-    if (joystick.getRawButton(1)) {
-      setpoint = 10;
-    } else if (joystick.getRawButton(2)) {
-      setpoint = 0;
-    }
+    // if (joystick.getRawButton(1)) {
+    //   setpoint = 10;
+    // } else if (joystick.getRawButton(2)) {
+    //   setpoint = 0;
+    // }
 
-    // get sensor position
-    double sensorPosition = _motor.getSelectedSensorPosition(0) * kDriveTick2Feet;
+    // // get sensor position
+    // double sensorPosition = _motor.getSelectedSensorPosition(0) * kDriveTick2Feet;
 
-    // calculations
-    double error = setpoint - sensorPosition;
-    double dt = Timer.getFPGATimestamp() - lastTimestamp;
+    // // calculations
+    // double error = setpoint - sensorPosition;
+    // double dt = Timer.getFPGATimestamp() - lastTimestamp;
 
-    if (Math.abs(error) < iLimit) {
-      errorSum += error * dt;
+    // if (Math.abs(error) < iLimit) {
+    //   errorSum += error * dt;
 
-    }
-    double errorRate = (error - lastError) / dt;
+    // }
+    // double errorRate = (error - lastError) / dt;
 
-    double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
+    // double outputSpeed = kP * error + kI * errorSum + kD * errorRate;
 
-    // output to motors
-    _motor.set(outputSpeed);
+    // // output to motors
+    // _motor.set(outputSpeed);
 
-    // update last- variables
-    lastTimestamp = Timer.getFPGATimestamp();
-    lastError = error;
+    // // update last- variables
+    // lastTimestamp = Timer.getFPGATimestamp();
+    // lastError = error;
   }
 
   @Override
@@ -209,26 +214,32 @@ public class Robot extends TimedRobot {
 
     // Output Encoder Values, joystick values, and velocity in encoder pulses per
     // 100msec
-    Constants.button.whenPressed(new ResetEncoderCommand());
-    double velocity = _motor.getSelectedSensorVelocity(0);
-    // and put it up on the dashboard
-    // if(_motor.getSelectedSensorPosition(0) > 256){
-    // _motor.set(ControlMode.PercentOutput, 0);
+    // Constants.button.whenPressed(new ResetEncoderCommand());
+    // double velocity = _motor.getSelectedSensorVelocity(0);
+    // // and put it up on the dashboard
+    // // if(_motor.getSelectedSensorPosition(0) > 256){
+    // // _motor.set(ControlMode.PercentOutput, 0);
+
+    // // }
+    // SmartDashboard.putNumber("Motor Encoder Velocity", velocity);
+    // double axis = joystick.getY();
+
+    // _motor.set(ControlMode.PercentOutput, axis);
+    // double targetPosition = joystick.getZ() * 4096 * 10;
+
+    // // reguluar teleop. Just give the motor power wherever you have the joystick set
+    // if (!joystick.getRawButton(1)) {
+    //   if (Math.abs(axis) > 0.1) {
+    //     _motor.set(ControlMode.PercentOutput, axis);
+    //   }
 
     // }
-    SmartDashboard.putNumber("Motor Encoder Velocity", velocity);
-    double axis = joystick.getY();
-
-    _motor.set(ControlMode.PercentOutput, axis);
-    double targetPosition = joystick.getZ() * 4096 * 10;
-
-    // reguluar teleop. Just give the motor power wherever you have the joystick set
-    if (!joystick.getRawButton(1)) {
-      if (Math.abs(axis) > 0.1) {
-        _motor.set(ControlMode.PercentOutput, axis);
-      }
-
+    double armPower = -joystick.getRawAxis(1); // remember negative sign
+    if (Math.abs(armPower) < 0.05) {
+      armPower = 0;
     }
+    armPower *= 0.5;
+    _motor.set(ControlMode.PercentOutput, armPower);
   }
 
   @Override
