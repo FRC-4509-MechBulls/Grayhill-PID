@@ -209,7 +209,7 @@ public class Robot extends TimedRobot {
 
     // Output Encoder Values, joystick values, and velocity in encoder pulses per
     // 100msec
-    Constants.button.whenPressed(new ResetEncoderCommand());
+    // Constants.button.whenPressed(new ResetEncoderCommand());
     double velocity = _motor.getSelectedSensorVelocity(0);
     // and put it up on the dashboard
     // if(_motor.getSelectedSensorPosition(0) > 256){
