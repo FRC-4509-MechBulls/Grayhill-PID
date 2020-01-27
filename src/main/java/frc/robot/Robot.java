@@ -48,7 +48,7 @@ public class Robot extends TimedRobot {
 
   // FRC0toAutonomous constants:
   final double kP = 0.5;
-  final double kI = 0.5;
+  final double kI = 0.4;
   final double kD = 0.1;
   final double iLimit = 1;
 
